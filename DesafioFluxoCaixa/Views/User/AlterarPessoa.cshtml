@@ -1,0 +1,152 @@
+﻿@model DesafioFluxoCaixa.Models.Pessoas.Person
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
+@using DesafioFluxoCaixa.Models.Pessoas
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var User = JsonSerializer.Deserialize<Person>(HttpContextAccessor.HttpContext.Session.GetString("User"));
+
+    if (User.Name != "Admin")
+        Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+@{
+    ViewData["Title"] = "Alterar Cadastro de Pessoa";
+}
+
+@{ if (ViewBag.Msg != null)
+    {
+        <h1>Erro</h1>
+    }
+}
+
+<h1>Atualizar Cadastro</h1>
+
+<hr />
+<div class="row">
+    <div class="col-4">
+        <form data-bind="submit: ValidarDados" asp-action="AtualizarPessoa">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Name" class="control-label">Nome *</label>
+                <input data-bind="value:Nome, css: { 'is-invalid': Email.error() && Email.isModified() }" asp-for="Name" class="form-control text-center" type="text" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Email" class="control-label">Email *</label>
+                <input data-bind="value:Email, css: { 'is-invalid': Email.error() && Email.isModified() }" asp-for="Email" type="email" class="form-control text-center" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Password" class="control-label">Senha *</label>
+                <input data-bind="value:Senha" asp-for="Password" type="password" class="form-control text-center" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Salario" class="control-label">Salário</label>
+                <input type="number" step=".01" id="Salario" data-bind="value: Salario, css: { 'is-invalid': Salario.error() && Salario.isModified() }" asp-for="Salario" class="form-control text-center" />
+            </div>
+            <div class="form-group text-center mt-3">
+                <input type="submit" value="Salvar" class="btn btn-success p-3" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function viewModel() {
+
+        var self = this;
+
+        ko.validation.init({
+
+            insertMessages: true,
+            errorMessageClass: 'invalid-feedback', //Classe do span da msg de erro
+            errorClass: 'is-invalid', //Classe do input com a info errada
+
+        }, true);
+
+        self.Nome = ko.observable("@Model.Name").extend({
+
+            required:
+            {
+                params: true,
+                message: "Preenchimento obrigatório"
+            }
+        });
+        self.Email = ko.observable("@Model.Email").extend({
+            email:
+            {
+                params: true,
+                message: "Email inválido"
+            }
+        })
+        self.Senha = ko.observable("@Model.Password");
+        self.Salario = ko.observable("@Model.Salario").extend(
+            {
+                validation:
+                {
+                    message: "O Salário não pode ser menor que zero",
+                    validator: function (value) {
+                        return value >= 0;
+                    }
+                },
+
+                number:
+                {
+                    params: true,
+                    message: "O Salário precisa ser numérico"
+                }
+            });
+
+        var Erros = ko.validation.group(self);
+        self.ValidarDados = function () {
+
+            if (Erros().length == 0) {
+                self.SendAjax();
+            }
+
+            else {
+                Erros.showAllMessages();
+            }
+        };
+
+        self.SendAjax = function () {
+            $.ajax({
+                type: "POST",
+                url: "/CRUD/AtualizarPessoa",
+                data:
+                {
+                    Id: @Model.Id,
+                    Name: self.Nome,
+                    Email: self.Email,
+                    Password: self.Senha,
+                    Salario: self.Salario
+                },
+                dataType: "json",
+                success: function (person) {
+
+                    if (person != null) {
+                        Swal.fire({
+                            title: 'Confirmado',
+                            text: "Dados da conta alterados com sucesso.",
+                            icon: 'success',
+                            confirmButtonColor: '#08ac54',
+                            confirmButtonText: 'Ok'
+                        }).then((result) => {
+
+                            window.location.href = '/CRUD/AlterarPessoa/' + person.id;
+                        })
+                    }
+                }
+            });
+        }
+    }
+
+    $(document).ready(function () {
+
+        vm = new viewModel();
+        ko.applyBindings(vm);
+    });
+</script>

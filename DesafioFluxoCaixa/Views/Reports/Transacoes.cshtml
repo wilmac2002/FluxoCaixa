@@ -1,0 +1,129 @@
+﻿@model TransacoesReport;
+@using DesafioFluxoCaixa.Models.Transacoes;
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
+@using DesafioFluxoCaixa.Models.Pessoas
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var User = JsonSerializer.Deserialize<Person>(HttpContextAccessor.HttpContext.Session.GetString("User"));
+
+    if (User.Name != "Admin")
+        Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+@{
+    ViewData["Title"] = "Relatório de Transações";
+}
+
+<h1 class="text-center">Transações</h1>
+
+<h4>Selecione um período:</h4>
+
+<form asp-controller="Reports" method="get" asp-action="FiltrarPeriodo" asp-route-dataInicial="@Model.FiltroPesquisaTransacoes.DataInicial" asp-route-dataFinal="@Model.FiltroPesquisaTransacoes.DataFinal" class="form-inline">
+    <div class="row">
+        <div class="col-md-5">
+            <div class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="FiltroPesquisaTransacoes.DataInicial" class="control-label">Data Inicial</label>
+                <input asp-for="FiltroPesquisaTransacoes.DataInicial" type="date" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="FiltroPesquisaTransacoes.DataFinal" class="control-label">Data Final</label>
+                <input asp-for="FiltroPesquisaTransacoes.DataFinal" type="date" id="dataFinal" class="form-control" />
+            </div>
+        </div>
+    </div>
+    <div class="row" style="margin-top: 10px">
+        <div class="col-md-5">
+            <div class="form-group">
+                <input type="submit" value="Filtrar Período" class="btn btn-success" />
+            </div>
+        </div>
+    </div>
+</form>
+<div class="col list-inline">
+    @Html.ActionLink("Mostrar os últimos 7 dias", "Mostrar7Dias", "Reports", new { id = User.Id }, new { @class = "btn btn-success" })
+    @Html.ActionLink("Mostrar os últimos 15 dias", "Mostrar15Dias", "Reports", new { id = User.Id }, new { @class = "btn btn-success" })
+    @Html.ActionLink("Mostrar os últimos 30 dias", "Mostrar30Dias", "Reports", new { id = User.Id }, new { @class = "btn btn-success" })
+</div>
+
+
+<div class="row" style="margin-top: 30px">
+    <h2>Depósitos</h2>
+    <hr />
+
+    <div class="row">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        Data/Horário
+                    </th>
+                    <th>
+                        Descrição
+                    </th>
+                    <th>
+                        Valor
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (Deposit deposito in Model.Deposits)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => deposito.Date)
+                        </td>
+
+                        <td>
+                            @Html.DisplayFor(modelItem => deposito.Description)
+                        </td>
+
+                        <td>
+                            <span>R$ @Html.DisplayFor(modelItem => deposito.Value)</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Saques</h2>
+    <hr />
+
+    <div class="row">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        Data/Horário
+                    </th>
+                    <th>
+                        Descrição
+                    </th>
+                    <th>
+                        Valor
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (Withdraw saque in Model.Withdraws)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => saque.Date)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => saque.Description)
+                        </td>
+                        <td>
+                            <span>R$ @Html.DisplayFor(modelItem => saque.Value)</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

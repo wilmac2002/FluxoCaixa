@@ -1,0 +1,56 @@
+﻿@model IEnumerable<DesafioFluxoCaixa.Models.Pessoas.Person>
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
+@using DesafioFluxoCaixa.Models.Pessoas
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var User = JsonSerializer.Deserialize<Person>(HttpContextAccessor.HttpContext.Session.GetString("User"));
+
+    if (User.Name != "Admin")
+        Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+@{
+    ViewData["Title"] = "Relatório de Cadastro";
+}
+
+<h1>Pessoas</h1>
+
+<hr />
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                ID
+            </th>
+            <th>
+                Nome
+            </th>
+            <th>
+                Email
+            </th>
+            <th>
+                Salário
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Id)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Email)
+                </td>
+                <td>
+                    R$ @Html.DisplayFor(modelItem => item.Salario)
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

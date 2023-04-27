@@ -1,0 +1,206 @@
+﻿@model List<DesafioFluxoCaixa.Models.Contas.Account>;
+
+@{
+    ViewData["Title"] = "Selecionar Conta";
+}
+
+<h1>Saque</h1>
+
+<h4>Selecione uma conta:</h4>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Nome
+            </th>
+            <th>
+                Limite
+            </th>
+            <th>
+                Mínimo
+            </th>
+            <th>
+                Saldo
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Limit)
+            </td>
+            <td>
+                R$ @Html.DisplayFor(modelItem => item.MinimalBalance)
+            </td>
+            <td>
+                R$ @Html.DisplayFor(modelItem => item.Balance)
+            </td>
+            @*<td>
+                @Html.ActionLink("Sacar", "MandarContaSaque", "CRUD", new { id = item.Id }, new { @class = "btn btn-success" })
+            </td>*@
+            <td>
+                <button onclick="DadosModal(@item.Id,'@item.Name','@item.Balance')" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">Sacar</button>
+            </td>
+        </tr>
+        }
+    </tbody>
+</table>
+
+<!--Modal Deposito-->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="TituloModal">
+                </h5>
+            </div>
+            <form data-bind="submit: ValidarDados">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="control-label">Número da Conta</label>
+                        <input id="ContaId" data-bind="value: ContaId" class="form-control text-center" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="control-label">Valor *</label>
+                        <input type="number" step=".01" id="Valor" data-bind="value: Valor, css: { 'is-invalid': Valor.error() && Valor.isModified() }" placeholder="R$" class="form-control text-center">
+                    </div>
+                    <div class="mb-3">
+                        <label class="control-label">Descrição</label>
+                        <input data-bind="value: Descricao" type="text" class="form-control" />
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <div class="row w-100">
+                        <div class="col-6 align-middle">
+                            <h5 class="modal-title" id="SaldoAtualModal">
+                            </h5>
+                        </div>
+                        <div class="col-6 d-flex justify-content-end gap-2 align-middle">
+                            <input type="submit" value="Sacar" class="btn btn-success" />
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function DadosModal(id, name, saldo) {
+        console.log(id);
+        console.log(name);
+        console.log(parseFloat(saldo));
+        $('#ContaId').val(id);
+        $('#TituloModal').text('Sacar da conta de ' + name);
+        $('#SaldoAtualModal').text('Saldo atual: R$' + saldo);
+    }
+
+    function viewModel() {
+
+        var self = this;
+
+        ko.validation.init({
+
+            insertMessages: true,
+            errorMessageClass: 'invalid-feedback', //Classe do span da msg de erro
+            errorClass: 'is-invalid', //Classe do input com a info errada
+
+        }, true);
+
+        //cria nova regra
+        ko.validation.rules["saldo"] = {
+
+            validator: function (value) {
+
+                var saldo = parseFloat($('#SaldoAtualModal').text().replace(/\D/g,""));
+                return value <= saldo;
+            },
+
+            message: "O valor não pode exceder o saldo atual"
+        };
+        //cadastra as regras
+        ko.validation.registerExtenders();
+
+        self.Valor = ko.observable(0).extend(
+            {
+                required:
+                {
+                    params: true,
+                    message: "Preenchimento obrigatório"
+                },
+
+                validation:
+                {
+                    message: "O valor não pode ser menor ou igual à zero",
+                    validator: function (value) {
+                        return value > 0;
+                    }
+                },
+
+                number:
+                {
+                    params: true,
+                    message: "O valor precisa ser numérico"
+                },
+
+                saldo:true
+            });
+
+        self.Descricao = ko.observable();
+
+        var Erros = ko.validation.group(self);
+        self.ValidarDados = function () {
+
+            if (Erros().length == 0) {
+                self.SendAjax();
+            }
+
+            else {
+                Erros.showAllMessages();
+            }
+        };
+
+        self.SendAjax = function () {
+            $.ajax({
+                type: "POST",
+                url: "/CRUD/Sacar",
+                data:
+                {
+                    ContaId: $('#ContaId').val(),
+                    Valor: self.Valor,
+                    Descricao: self.Descricao
+                },
+                dataType: "json",
+                success: function (retorno) {
+                    if (retorno) {
+                        Swal.fire({
+                            title: 'Confirmado',
+                            text: "Saque efetuado com sucesso.",
+                            icon: 'success',
+                            confirmButtonColor: '#08ac54',
+                            confirmButtonText: 'Ok'
+                        }).then((result) => {
+                            window.location.href = '/CRUD/SelecionarContaSaque';
+                        })
+                    }
+                }
+            });
+        }
+    }
+
+    $(document).ready(function () {
+
+        vm = new viewModel();
+        ko.applyBindings(vm);
+    });
+
+</script>

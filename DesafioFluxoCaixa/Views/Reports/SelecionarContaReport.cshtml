@@ -1,0 +1,62 @@
+﻿@model IEnumerable<DesafioFluxoCaixa.Models.Contas.Account>
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
+@using DesafioFluxoCaixa.Models.Pessoas
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var User = JsonSerializer.Deserialize<Person>(HttpContextAccessor.HttpContext.Session.GetString("User"));
+
+    if (User.Name != "Admin")
+        Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+@{
+    ViewData["Title"] = "Selecionar Conta";
+}
+
+<h1>Relatório de transações</h1>
+
+<h4>Selecione uma conta:</h4>
+
+<hr/>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Nome do proprietário
+            </th>
+            <th>
+                Saldo
+            </th>
+            <th>
+                Limite
+            </th>
+            <th>
+                Saldo Mínimo
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    R$ @Html.DisplayFor(modelItem => item.Balance)
+                </td>
+                <td>
+                    R$ @Html.DisplayFor(modelItem => item.Limit)
+                </td>
+                <td>
+                    R$ @Html.DisplayFor(modelItem => item.MinimalBalance)
+                </td>
+                <td>
+                    @Html.ActionLink("Selecionar", "MostrarPorId", "Reports", new { id = item.Id }, new { @class = "btn btn-success" })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

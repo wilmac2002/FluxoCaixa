@@ -1,0 +1,138 @@
+﻿@model DesafioFluxoCaixa.Models.Pessoas.Person
+@{
+    ViewData["Title"] = "View";
+    Layout = "~/Views/Shared/_LayoutLogCad.cshtml";
+}
+
+<div class="row text-center" style="margin-top: 20px;">
+    <div class="col">
+        <h1>Desafio Fluxo De Caixa</h1>
+    </div>
+</div>
+<div class="row text-center" style="margin-top: 20px;">
+    <div class="col">
+        <h3>Login</h3>
+    </div>
+</div>
+<div class="row justify-content-center">
+    <form data-bind="submit: ValidarDados" style="width: 50%" class="needs-validation">
+        <div class="form-group mb-3">
+            <label class="control-label">Email *</label>
+            <input data-bind="value: Email, css: { 'is-invalid': Email.error() && Email.isModified() }" id="Email" asp-for="Email" class="form-control" type="email" placeholder="endereco@dominio" />
+            <span id="EmailInexistente" style="display:none" class="invalid-feedback">Não existe uma conta com este Email</span>
+        </div>
+        <div class="form-group mb-3">
+            <label class="control-label">Senha *</label>
+            <input data-bind="value: Password, css: { 'is-invalid': Password.error() && Password.isModified() }" id="Password" asp-for="Password" class="form-control" type="password" placeholder="******" />
+            <span id="PasswordInexistente" style="display:none" class="invalid-feedback">Senha incorreta</span>
+        </div>
+        <div class="form-group text-center">
+            <button type="submit" class="btn btn-success" style="width:30%; height:20%">
+                <span>Entrar</span>
+            </button>
+        </div>
+    </form>
+
+    <div class="row text-center" style="margin-top: 50px;">
+        <p style="margin-bottom: 4px;">Ainda não tem uma conta?</p>
+        <a asp-action="Cadastro" asp-controller="CRUD">Cadastre-se!</a>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function viewModel() {
+
+        var self = this;
+
+        ko.validation.init({
+
+            insertMessages: true,
+            errorMessageClass: 'invalid-feedback', //Classe do span da msg de erro
+            errorClass: 'is-invalid', //Classe do input com a info errada
+
+        }, true);
+
+        self.Email = ko.observable().extend(
+            {
+                required:
+                {
+                    params: true,
+                    message: "Preenchimento obrigatório"
+                },
+
+                email:
+                {
+                    params: true,
+                    message: "Email inválido"
+                }
+
+            });
+
+        self.Password = ko.observable().extend(
+            {
+                required:
+                {
+                    params: true,
+                    message: "Preenchimento obrigatório"
+                },
+
+            });
+
+        var Erros = ko.validation.group(self);
+        self.ValidarDados = function () {
+
+            if (Erros().length == 0) {
+                self.SendAjax();
+            }
+
+            else {
+                Erros.showAllMessages();
+            }
+        };
+
+        self.SendAjax = function (dados) {
+            $.ajax({
+                type: "POST",
+                url: "/Home/VefLogin",
+                data:
+                {
+                    Password: self.Password,
+                    Email: self.Email
+                },
+                dataType: "json",
+                success: function (result) {
+                    switch (result) {
+                        case 1:
+                            $('#Email').addClass('is-invalid');
+                            $('#EmailInexistente').css("display", "block");
+
+                            document.getElementById('Email').onkeypress = function () {
+                                $('#Email').removeClass('is-invalid');
+                                $('#EmailInexistente').css("display", "none");
+                            }
+                            break;
+
+                        case 2:
+                            $('#Password').addClass('is-invalid');
+                            $('#PasswordInexistente').css("display", "block");
+
+                            document.getElementById('Password').onkeypress = function () {
+                                $('#Password').removeClass('is-invalid');
+                                $('#PasswordInexistente').css("display", "none");
+                            }
+                            break;
+                        case 3:
+                            window.location.href = '/Home/Index';
+                    }
+                }
+            });
+        }
+    }
+
+    $(document).ready(function () {
+
+        vm = new viewModel();
+        ko.applyBindings(vm);
+    });
+</script>

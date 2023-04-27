@@ -1,0 +1,157 @@
+﻿@model DesafioFluxoCaixa.Models.Cadastro
+@{
+    ViewData["Title"] = "Cadastro";
+}
+
+@{
+    Layout = "~/Views/Shared/_LayoutLogCad.cshtml";
+}
+
+<div class="row m-3">
+    <h1>Cadastro</h1>
+</div>
+
+<hr />
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <form data-bind="submit: ValidarDados">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Nome" class="control-label">Nome *</label>
+                <input data-bind="value:Nome, css: { 'is-invalid': Email.error() && Email.isModified() }" asp-for="Nome" class="form-control" type="text"/>
+                <span asp-validation-for="Nome" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Email" class="control-label">Email *</label>
+                <input data-bind="value:Email, css: { 'is-invalid': Email.error() && Email.isModified() }" asp-for="Email" type="email" class="form-control"/>
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Senha" class="control-label">Senha *</label>
+                <input data-bind="value:Senha" asp-for="Senha" type="password" class="form-control"/>
+                <span asp-validation-for="Senha" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Salario" class="control-label">Salário</label>
+                <input placeholder="R$" type="number" step=".01" id="Salario" data-bind="value: Salario, css: { 'is-invalid': Salario.error() && Salario.isModified() }" asp-for="Salario" class="form-control"/>
+            </div>
+            <div class="form-group">
+                <label asp-for="SaldoMinimo" class="control-label">Saldo Mínimo *</label>
+                <input placeholder="R$" type="number" step=".01" id="SaldoMinimo" data-bind="value: SaldoMinimo, css: { 'is-invalid': SaldoMinimo.error() && SaldoMinimo.isModified() }" asp-for="SaldoMinimo" class="form-control"/>
+                <span asp-validation-for="SaldoMinimo" class="text-danger"></span>
+            </div>
+            <div class="form-group text-center m-3">
+                <input type="submit" value="Criar" class="btn btn-success w-50" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function viewModel() {
+
+        var self = this;
+
+        ko.validation.init({
+
+            insertMessages: true,
+            errorMessageClass: 'invalid-feedback', //Classe do span da msg de erro
+            errorClass: 'is-invalid', //Classe do input com a info errada
+
+        }, true);
+
+        self.Nome = ko.observable().extend({
+
+            required:
+            {
+                params: true,
+                message: "Preenchimento obrigatório"
+            }
+        });
+        self.Email = ko.observable().extend({
+
+            required:
+            {
+                params: true,
+                message: "Preenchimento obrigatório"
+            },
+
+            email:
+            {
+                params: true,
+                message: "Email inválido"
+            }
+        })
+        self.Senha = ko.observable();
+        self.Salario = ko.observable(0).extend(
+            {
+                number:
+                {
+                    params: true,
+                    message: "O Salário precisa ser numérico"
+                }
+            });
+
+        self.SaldoMinimo = ko.observable(0).extend(
+            {
+                required:
+                {
+                    params: true,
+                    message: "Preenchimento obrigatório"
+                },
+
+                validation:
+                {
+                    message: "O Saldo Mínimo não pode ser menor ou igual à zero",
+                    validator: function (value) {
+                        return value > 0;
+                    }
+                },
+
+                number:
+                {
+                    params: true,
+                    message: "O Saldo Mínimo precisa ser numérico"
+                },
+            });
+
+        var Erros = ko.validation.group(self);
+        self.ValidarDados = function () {
+
+            if (Erros().length == 0) {
+                self.SendAjax();
+            }
+
+            else {
+                Erros.showAllMessages();
+            }
+        };
+
+        self.SendAjax = function () {
+            $.ajax({
+                type: "POST",
+                url: "/CRUD/SendCadastro",
+                data:
+                {
+                    Nome: self.Nome,
+                    Email: self.Email,
+                    Senha: self.Senha,
+                    Salario: self.Salario,
+                    SaldoMinimo: self.SaldoMinimo
+                },
+                dataType: "json",
+                success: function () {
+
+                    window.location.href = '/Home/Index';
+                }
+            });
+        }
+    }
+
+    $(document).ready(function () {
+
+        vm = new viewModel();
+        ko.applyBindings(vm);
+    });
+</script>

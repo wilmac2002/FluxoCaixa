@@ -1,0 +1,131 @@
+﻿@model DesafioFluxoCaixa.Models.Contas.Account
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
+@using DesafioFluxoCaixa.Models.Pessoas
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var User = JsonSerializer.Deserialize<Person>(HttpContextAccessor.HttpContext.Session.GetString("User"));
+
+    if (User.Name != "Admin")
+    {
+        Layout = "~/Views/Shared/_LayoutUser.cshtml";
+        <script>
+            document.getElementById('Limite').style.display = 'none';
+        </script>
+    }
+}
+@{
+    ViewData["Title"] = "Alterar Cadastro de Conta";
+}
+
+@{ if (ViewBag.Msg != null)
+    {
+        <h1>Erro</h1>
+    }
+}
+<h1>Atualizar Cadastro</h1>
+
+<hr />
+<div class="row">
+    <div class="col-4">
+        <form data-bind="submit: ValidarDados" asp-action="AtualizarConta">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Balance" class="control-label">Saldo</label>
+                <input  type="number" step=".01" id="Saldo" data-bind="value: Saldo" asp-for="Balance" class="form-control" readonly />
+                <span asp-validation-for="Balance" class="text-danger text-center"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="MinimalBalance" class="control-label">Saldo Mínimo</label>
+                <input type="number" step=".01" id="SaldoMinimo" data-bind="value: SaldoMinimo, css: { 'is-invalid': SaldoMinimo.error() && SaldoMinimo.isModified() }" asp-for="MinimalBalance" class="form-control text-center" />
+                <span asp-validation-for="MinimalBalance" class="text-danger"></span>
+            </div>
+            <div class="form-group text-center mt-3">
+                <input type="submit" value="Salvar" class="btn btn-success p-3" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function viewModel() {
+
+        var self = this;
+
+        ko.validation.init({
+
+            insertMessages: true,
+            errorMessageClass: 'invalid-feedback', //Classe do span da msg de erro
+            errorClass: 'is-invalid', //Classe do input com a info errada
+
+        }, true);
+
+        self.Saldo = ko.observable("@Model.Balance");
+
+        self.SaldoMinimo = ko.observable("@Model.MinimalBalance").extend(
+            {
+                validation:
+                {
+                    message: "O Saldo mínimo não pode ser menor ou igual à zero",
+                    validator: function (value) {
+                        return value > 0;
+                    }
+                },
+
+                number:
+                {
+                    params: true,
+                    message: "O Salário precisa ser numérico"
+                }
+            });
+
+        var Erros = ko.validation.group(self);
+        self.ValidarDados = function () {
+
+            if (Erros().length == 0) {
+                self.SendAjax();
+            }
+
+            else {
+                Erros.showAllMessages();
+            }
+        };
+
+        self.SendAjax = function () {
+            $.ajax({
+                type: "POST",
+                url: "/CRUD/AtualizarConta",
+                data:
+                {
+                    Id: @Model.Id,
+                    MinimalBalance: self.SaldoMinimo,
+                    Limit: @Model.Limit
+                },
+                dataType: "json",
+                success: function (conta) {
+
+                    if (conta != null) {
+                        Swal.fire({
+                            title: 'Confirmado',
+                            text: "Dados da conta alterados com sucesso.",
+                            icon: 'success',
+                            confirmButtonColor: '#08ac54',
+                            confirmButtonText: 'Ok'
+                        }).then((result) => {
+
+                            window.location.href = '/CRUD/AlterarConta/' + conta.id;
+                        })
+                    }
+                }
+            });
+        }
+    }
+
+    $(document).ready(function () {
+
+        vm = new viewModel();
+        ko.applyBindings(vm);
+    });
+</script>

@@ -1,0 +1,263 @@
+﻿@model IEnumerable<DesafioFluxoCaixa.Models.Contas.Account>
+@{
+    ViewData["Title"] = "Alteração De Contas";
+}
+
+<div class="row">
+    <div class="col-6 mb-4">
+        <h1>Contas</h1>
+    </div>
+    <div class="col-6 pt-2">
+        <span>@Html.ActionLink("Criar novo cadastro", "Cadastro", "CRUD", null, new { @class = "btn btn-success" })</span>
+    </div>
+</div>
+
+<div class="row">
+    <h4>Selecione uma Conta:</h4>
+</div>
+
+<div class="row">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Nome
+                </th>
+                <th>
+                    Limite
+                </th>
+                <th>
+                    Mínimo
+                </th>
+                <th>
+                    Saldo
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </td>
+                    <td>
+                        R$ @Html.DisplayFor(modelItem => item.Limit)
+                    </td>
+                    <td>
+                        R$ @Html.DisplayFor(modelItem => item.MinimalBalance)
+                    </td>
+                    <td>
+                        R$ @Html.DisplayFor(modelItem => item.Balance)
+                    </td>
+                    <td>
+                        <button onclick="PreencherModal(@item.Id, '@item.Name')" data-bs-toggle="modal" data-bs-target="#exampleModal" class="btn btn-success">
+                            <span>Editar</span>
+                        </button>
+
+                        <button onclick="DeletarPessoa(@item.Id)" class="btn btn-danger">
+                            <span>Deletar</span>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!--Modal Alterar Conta-->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="TituloModal">
+                </h5>
+            </div>
+            <form data-bind="submit: ValidarDados">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label class="control-label">Número da Conta</label>
+                        <input id="ContaId" data-bind="value: ContaId" class="form-control text-center" readonly />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="control-label">Limite</label>
+                        <input id="Limite" type="number" step=".01" data-bind="value: Limite, css: { 'is-invalid': Limite.error() && Limite.isModified() }" placeholder="R$" class="form-control text-center">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="control-label">Saldo Mínimo *</label>
+                        <input id="SaldoMinimo" type="number" step=".01" data-bind="value: SaldoMinimo, css: { 'is-invalid': SaldoMinimo.error() && SaldoMinimo.isModified() }" placeholder="R$" class="form-control text-center">
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <input type="submit" class="btn btn-success">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+
+    function PesquisarContaPorId(id) {
+
+        self = this;
+
+        $.ajax
+            ({
+                async: false,
+                type: "GET",
+                url: "/CRUD/AlterarConta",
+                data:
+                {
+                    id: id
+                },
+                dataType: "json",
+
+                success: function RetornarConta(conta) {
+                    self.Conta = conta;
+                }
+
+            });
+
+        return Conta;
+    }
+
+    function PreencherModal(id, name) {
+
+        $('#TituloModal').text('Alterar conta de ' + name);
+
+        var conta = PesquisarContaPorId(id);
+
+        vm.ContaId(conta.id);
+        vm.Limite(conta.limit);
+        vm.SaldoMinimo(conta.minimalBalance);
+
+    }
+
+    function viewModel() {
+
+        var self = this;
+
+        ko.validation.init({
+
+            insertMessages: true,
+            errorMessageClass: 'invalid-feedback', //Classe do span da msg de erro
+            errorClass: 'is-invalid', //Classe do input com a info errada
+
+        }, true);
+
+        self.ContaId = ko.observable();
+        self.Limite = ko.observable();
+        self.SaldoMinimo = ko.observable().extend(
+            {
+                validation:
+                {
+                    message: "O Saldo Mínimo não pode ser menor que zero",
+                    validator: function (value) {
+                        return value >= 0;
+                    }
+                },
+
+                number:
+                {
+                    params: true,
+                    message: "O Saldo Mínimo precisa ser numérico"
+                }
+            });
+
+        var Erros = ko.validation.group(self);
+        self.ValidarDados = function () {
+
+            if (Erros().length == 0) {
+                self.SendAjax();
+            }
+
+            else {
+                Erros.showAllMessages();
+            }
+        };
+
+        self.SendAjax = function () {
+
+            var Conta = PesquisarContaPorId(self.ContaId);
+
+            $.ajax({
+                type: "POST",
+                url: "/CRUD/AtualizarConta",
+                data:
+                {
+                    Id: self.ContaId,
+                    MinimalBalance: self.SaldoMinimo,
+                    Limit: self.Limite,
+                },
+                dataType: "json",
+                success: function (conta) {
+
+                    if (conta != null) {
+                        Swal.fire({
+                            title: 'Confirmado',
+                            text: "Dados da conta alterados com sucesso.",
+                            icon: 'success',
+                            confirmButtonColor: '#08ac54',
+                            confirmButtonText: 'Ok'
+                        }).then((result) => {
+
+                            window.location.href = '/CRUD/SelecionarConta';
+                        })
+                    }
+                }
+            });
+        }
+    }
+
+    var vm = new viewModel();
+    $(document).ready(function () {
+        ko.applyBindings(vm);
+    });
+
+    function DeletarPessoa(id) {
+
+        Swal.fire({
+            title: 'Você tem certerza?',
+            text: "Todos os dados vinculados à esta conta serão DELETADOS.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#08ac54',
+            confirmButtonText: 'Sim, deletar',
+            cancelButtonColor: '#d33',
+            cancelButtonText: 'Cancelar'
+
+        }).then((result) => {
+
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    type: "POST",
+                    url: "/CRUD/DeletarDados",
+                    data:
+                    {
+                        Id: id,
+                    },
+                    dataType: "json",
+                    success: function (retorno) {
+                        if (retorno) {
+
+                            Swal.fire({
+                                title: 'Confirmado',
+                                text: "Cadastro deletado com sucesso.",
+                                icon: 'success',
+                                confirmButtonColor: '#08ac54',
+                                confirmButtonText: 'Ok'
+                            })
+                        }
+                    },
+                })
+            }
+
+        })
+    }
+</script>

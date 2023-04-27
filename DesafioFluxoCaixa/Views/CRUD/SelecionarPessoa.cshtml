@@ -1,0 +1,282 @@
+﻿@model IEnumerable<DesafioFluxoCaixa.Models.Pessoas.Person>
+@{
+    ViewData["Title"] = "View";
+}
+
+<div class="row">
+    <div class="col-6">
+        <h1>Pessoas</h1>
+    </div>
+    <div class="col-6 pt-2">
+        <span>@Html.ActionLink("Criar novo cadastro", "Cadastro", "CRUD", null, new { @class = "btn btn-success" })</span>
+    </div>
+</div>
+
+<div class="row">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Nome
+                </th>
+                <th>
+                    Email
+                </th>
+                <th>
+                    Salário
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Email)
+                    </td>
+                    <td>
+                        R$ @Html.DisplayFor(modelItem => item.Salario)
+                    </td>
+                    <td>
+                        <button onclick="DadosModal(@item.Id,'@item.Name')" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">Editar</button>
+
+                        <button onclick="DeletarPessoa(@item.Id)" class="btn btn-danger">
+                            <span>Deletar</span>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!--Modal Alterar Pessoa-->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="TituloModal">
+                </h5>
+            </div>
+            <form data-bind="submit: ValidarDados">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="control-label">ID</label>
+                        <input id="ContaId" data-bind="value: ContaId" class="form-control text-center" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="control-label">Nome</label>
+                        <input id="Name" data-bind="value: Nome, css: { 'is-invalid': Nome.error() && Nome.isModified() }" type="text" class="form-control text-center" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="control-label">Email</label>
+                        <input id="Email" data-bind="value: Email, css: { 'is-invalid': Email.error() && Email.isModified() }" type="text" class="form-control text-center" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="control-label">Password</label>
+                        <input id="Password" data-bind="value: Senha, css: { 'is-invalid': Senha.error() && Senha.isModified() }" type="password" class="form-control text-center" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="control-label">Salario</label>
+                        <input id="Salario" type="number" step=".01" data-bind="value: Salario, css: { 'is-invalid': Salario.error() && Salario.isModified() }" placeholder="R$" class="form-control text-center">
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <input type="submit" class="btn btn-success">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    function DadosModal(id, name) {
+
+        $('#TituloModal').text('Alterar cadastro de ' + name);
+
+        PesquisarPessoaPorId(id);
+    }
+
+    function PesquisarPessoaPorId(id)
+    {
+        $.ajax
+        ({
+            type: "GET",
+            url: "/CRUD/AlterarPessoa",
+            data:
+            {
+                 id: id
+            },
+            dataType: "json",
+            success: function PreencherModal(person) {
+                console.log(person);
+
+                vm.ContaId(person.id);
+                vm.Nome(person.name);
+                vm.Email(person.email);
+                vm.Senha(person.password);
+                vm.Salario(person.salario);
+            }
+
+        })
+
+    }
+
+    function viewModel() {
+
+        var self = this;
+
+        ko.validation.init({
+
+            insertMessages: true,
+            errorMessageClass: 'invalid-feedback', //Classe do span da msg de erro
+            errorClass: 'is-invalid', //Classe do input com a info errada
+
+        }, true);
+
+        self.ContaId = ko.observable();
+        self.Nome = ko.observable().extend({
+
+            required:
+            {
+                params: true,
+                message: "Preenchimento obrigatório"
+            }
+        });
+        self.Email = ko.observable().extend({
+
+            required:
+            {
+                params: true,
+                message: "Preenchimento obrigatório"
+            },
+
+            email:
+            {
+                params: true,
+                message: "Email inválido"
+            }
+        })
+        self.Senha = ko.observable().extend({
+            required:
+            {
+                params: true,
+                message: "Preenchimento obrigatório"
+            }
+        })
+        self.Salario = ko.observable().extend(
+            {
+                validation:
+                {
+                    message: "O Salário não pode ser menor que zero",
+                    validator: function (value) {
+                        return value >= 0;
+                    }
+                },
+
+                number:
+                {
+                    params: true,
+                    message: "O Salário precisa ser numérico"
+                }
+            });
+
+        var Erros = ko.validation.group(self);
+        self.ValidarDados = function () {
+
+            if (Erros().length == 0) {
+                self.SendAjax();
+            }
+
+            else {
+                Erros.showAllMessages();
+            }
+        };
+
+        self.SendAjax = function () {
+            $.ajax({
+                type: "POST",
+                url: "/CRUD/AtualizarPessoa",
+                data:
+                {
+                    Id: $('#ContaId').val(),
+                    Name: self.Nome,
+                    Email: self.Email,
+                    Password: self.Senha,
+                    Salario: self.Salario
+                },
+                dataType: "json",
+                success: function (person) {
+
+                    if (person != null) {
+                        Swal.fire({
+                            title: 'Confirmado',
+                            text: "Dados da conta alterados com sucesso.",
+                            icon: 'success',
+                            confirmButtonColor: '#08ac54',
+                            confirmButtonText: 'Ok'
+                        }).then((result) => {
+
+                            window.location.href = '/CRUD/SelecionarPessoa';
+                        })
+                    }
+                }
+            });
+        }
+    }
+
+   var vm = new viewModel();
+    $(document).ready(function () {
+        ko.applyBindings(vm);
+    });
+
+    function DeletarPessoa(id) {
+
+        Swal.fire({
+            title: 'Você tem certerza?',
+            text: "Todos os dados vinculados à esta conta serão DELETADOS.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#08ac54',
+            confirmButtonText: 'Sim, deletar',
+            cancelButtonColor: '#d33',
+            cancelButtonText: 'Cancelar'
+
+        }).then((result) => {
+
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    type: "POST",
+                    url: "/CRUD/DeletarDados",
+                    data:
+                    {
+                        Id: id,
+                    },
+                    dataType: "json",
+                    success: function (retorno) {
+
+                        if (retorno) {
+                            Swal.fire({
+                                title: 'Confirmado',
+                                text: "Cadastro deletado com sucesso.",
+                                icon: 'success',
+                                confirmButtonColor: '#08ac54',
+                                confirmButtonText: 'Ok'
+                            })
+                        }
+                    },
+                })
+            }
+
+            })
+        }
+</script>
+
+
