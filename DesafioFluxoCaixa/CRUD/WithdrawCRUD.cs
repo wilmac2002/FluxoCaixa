@@ -91,7 +91,7 @@ namespace DesafioFluxoCaixa.CRUD
             try
             {
                 transaction = _session.BeginTransaction();
-                var item = this.FindAllByForeignId(id).ToList();
+                var item = this.FindAllByAccount(id).ToList();
 
                 foreach (var saque in item)
                 {
