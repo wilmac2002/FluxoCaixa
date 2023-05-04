@@ -39,23 +39,23 @@
     <tbody>
         @foreach (var item in Model)
         {
-            <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Id)
-                </td>
-                <td>
-                    R$ @Html.DisplayFor(modelItem => item.Balance)
-                </td>
-                <td>
-                    R$ @Html.DisplayFor(modelItem => item.Limit)
-                </td>
-                <td>
-                    R$ @Html.DisplayFor(modelItem => item.MinimalBalance)
-                </td>
-            </tr>
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Id)
+            </td>
+            <td>
+                R$ @Html.DisplayFor(modelItem => item.Balance)
+            </td>
+            <td>
+                R$ @Html.DisplayFor(modelItem => item.Limit)
+            </td>
+            <td>
+                R$ @Html.DisplayFor(modelItem => item.MinimalBalance)
+            </td>
+        </tr>
         }
     </tbody>
 </table>

@@ -1,16 +1,6 @@
 ﻿@model DesafioFluxoCaixa.Models.Pessoas.Person
-@using System.Text.Json
-@using Microsoft.AspNetCore.Http
-@using DesafioFluxoCaixa.Models.Pessoas
-@inject IHttpContextAccessor HttpContextAccessor
-
 @{
-    var User = JsonSerializer.Deserialize<Person>(HttpContextAccessor.HttpContext.Session.GetString("User"));
-
-    if (User.Name != "Admin")
-        Layout = "~/Views/Shared/_LayoutUser.cshtml";
-}
-@{
+    Layout = "~/Views/Shared/_LayoutUser.cshtml";
     ViewData["Title"] = "Alterar Cadastro de Pessoa";
 }
 

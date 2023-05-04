@@ -16,13 +16,13 @@ namespace DesafioFluxoCaixa.Controllers
         private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _contxt;
         private readonly ISession _session;
 
-        private readonly PersonCRUD personCRUD;
+        private readonly PersonRep personCRUD;
         public HomeController(ISession session, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor)
         {
             _session = session;
             _contxt = httpContextAccessor;
 
-            personCRUD = new PersonCRUD(_session);
+            personCRUD = new PersonRep(_session);
         }
 
         public IActionResult Index()

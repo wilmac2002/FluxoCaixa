@@ -1,4 +1,4 @@
-﻿using DesafioFluxoCaixa.Models.Contas;
+﻿using DesafioFluxoCaixa.Models.Transacoes;
 using NHibernate;
 using System;
 using System.Collections.Generic;
@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 
 namespace DesafioFluxoCaixa.CRUD
 {
-    public class AccountCRUD
+    public class WithdrawRep
     {
         private ISession _session;
-        public AccountCRUD(ISession session) => _session = session;
-        public async Task Add(Account item)
+        public WithdrawRep(ISession session) => _session = session;
+
+        public async Task Add(Withdraw item)
         {
             ITransaction transaction = null;
             try
@@ -31,17 +32,31 @@ namespace DesafioFluxoCaixa.CRUD
             }
         }
 
-        public IEnumerable<Account> FindAll() =>
-                        _session.Query<Account>().ToList();
+        public IEnumerable<Withdraw> FindAllByAccount(int id) =>
+                _session.Query<Withdraw>().Where(x => x.Conta.Id == id);
 
-        //public async Task<Account> FindByID(int id) =>
-        //                await _session.GetAsync<Account>(id);
+        public IEnumerable<Withdraw> FindAllByDates(FiltroPesquisaTransacoes datas)
+        {
+            return _session.Query<Withdraw>().Where(x => (x.Date.Date >= datas.DataInicial && x.Date.Date <= datas.DataFinal) && x.Conta.Id == datas.UserId);
+        }
 
-        public async Task<Account> FindByID(int id) =>
-                await _session.GetAsync<Account>(id);
+        public IEnumerable<Withdraw> FindAllLast7Days(int id)
+        {
+            return _session.Query<Withdraw>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-7) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
+        }
 
-        public Account FindByForeignId(int id) =>
-                        _session.Query<Account>().Where(x => x.Person.Id == id).FirstOrDefault();
+        public IEnumerable<Withdraw> FindAllLast15Days(int id)
+        {
+            return _session.Query<Withdraw>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-15) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
+        }
+
+        public IEnumerable<Withdraw> FindAllLast30Days(int id)
+        {
+            return _session.Query<Withdraw>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-30) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
+        }
+
+        public async Task<Withdraw> FindByID(int id) =>
+                        await _session.GetAsync<Withdraw>(id);
 
         public async Task Remove(int id)
         {
@@ -49,7 +64,7 @@ namespace DesafioFluxoCaixa.CRUD
             try
             {
                 transaction = _session.BeginTransaction();
-                var item = await _session.GetAsync<Account>(id);
+                var item = await _session.GetAsync<Withdraw>(id);
                 await _session.DeleteAsync(item);
                 await transaction.CommitAsync();
             }
@@ -70,8 +85,13 @@ namespace DesafioFluxoCaixa.CRUD
             try
             {
                 transaction = _session.BeginTransaction();
-                var item = this.FindByForeignId(id);
-                await _session.DeleteAsync(item);
+                var item = this.FindAllByAccount(id).ToList();
+
+                foreach (var saque in item)
+                {
+                    await _session.DeleteAsync(saque);
+                }
+
                 await transaction.CommitAsync();
             }
             catch (Exception ex)
@@ -85,7 +105,7 @@ namespace DesafioFluxoCaixa.CRUD
             }
         }
 
-        public async Task Update(Account item)
+        public async Task Update(Withdraw item)
         {
             ITransaction transaction = null;
             try

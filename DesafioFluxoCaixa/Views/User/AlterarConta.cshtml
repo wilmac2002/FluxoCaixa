@@ -1,21 +1,7 @@
 ﻿@model DesafioFluxoCaixa.Models.Contas.Account
-@using System.Text.Json
-@using Microsoft.AspNetCore.Http
-@using DesafioFluxoCaixa.Models.Pessoas
-@inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    var User = JsonSerializer.Deserialize<Person>(HttpContextAccessor.HttpContext.Session.GetString("User"));
-
-    if (User.Name != "Admin")
-    {
-        Layout = "~/Views/Shared/_LayoutUser.cshtml";
-        <script>
-            document.getElementById('Limite').style.display = 'none';
-        </script>
-    }
-}
-@{
+    Layout = "~/Views/Shared/_LayoutUser.cshtml";
     ViewData["Title"] = "Alterar Cadastro de Conta";
 }
 
@@ -29,17 +15,15 @@
 <hr />
 <div class="row">
     <div class="col-4">
-        <form data-bind="submit: ValidarDados" asp-action="AtualizarConta">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Balance" class="control-label">Saldo</label>
-                <input  type="number" step=".01" id="Saldo" data-bind="value: Saldo" asp-for="Balance" class="form-control" readonly />
-                <span asp-validation-for="Balance" class="text-danger text-center"></span>
+        <form data-bind="submit: ValidarDados">
+            <div class="text-danger"></div>
+            <div class="form-group" style="display: none">
+                <label class="control-label">Saldo</label>
+                <input  name="check" id="Saldo" data-bind="value: Saldo" class="form-control" readonly />
             </div>
             <div class="form-group">
-                <label asp-for="MinimalBalance" class="control-label">Saldo Mínimo</label>
-                <input type="number" step=".01" id="SaldoMinimo" data-bind="value: SaldoMinimo, css: { 'is-invalid': SaldoMinimo.error() && SaldoMinimo.isModified() }" asp-for="MinimalBalance" class="form-control text-center" />
-                <span asp-validation-for="MinimalBalance" class="text-danger"></span>
+                <label class="control-label">Saldo Mínimo</label>
+                <input type="number" step=".01" id="SaldoMinimo" data-bind="value: SaldoMinimo, css: { 'is-invalid': SaldoMinimo.error() && SaldoMinimo.isModified() }" class="form-control text-center" />
             </div>
             <div class="form-group text-center mt-3">
                 <input type="submit" value="Salvar" class="btn btn-success p-3" />
@@ -101,11 +85,11 @@
                 {
                     Id: @Model.Id,
                     MinimalBalance: self.SaldoMinimo,
-                    Limit: @Model.Limit
+                    Limit: @Model.Limit,
                 },
                 dataType: "json",
                 success: function (conta) {
-
+                    
                     if (conta != null) {
                         Swal.fire({
                             title: 'Confirmado',
@@ -128,4 +112,5 @@
         vm = new viewModel();
         ko.applyBindings(vm);
     });
+
 </script>

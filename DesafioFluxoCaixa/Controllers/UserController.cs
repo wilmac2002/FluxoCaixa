@@ -18,21 +18,21 @@ namespace DesafioFluxoCaixa.Controllers
     {
         private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _contxt;
         private readonly ISession _session;
-        private readonly PersonCRUD PersonCRUD;
-        private readonly WithdrawCRUD WithdrawCRUD;
-        private readonly DepositCRUD DepositCRUD;
-        private readonly AccountCRUD AccountCRUD;
+        private readonly PersonRep PersonCRUD;
+        private readonly WithdrawRep WithdrawCRUD;
+        private readonly DepositRep DepositCRUD;
+        private readonly AccountRep AccountCRUD;
 
-        private readonly PersonCRUD personCRUD;
+        private readonly PersonRep personCRUD;
         public UserController(ISession session, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor)
         {
             _session = session;
             _contxt = httpContextAccessor;
-            PersonCRUD = new PersonCRUD(_session);
-            AccountCRUD = new AccountCRUD(_session);
-            DepositCRUD = new DepositCRUD(_session);
-            WithdrawCRUD = new WithdrawCRUD(_session);
-            personCRUD = new PersonCRUD(_session);
+            PersonCRUD = new PersonRep(_session);
+            AccountCRUD = new AccountRep(_session);
+            DepositCRUD = new DepositRep(_session);
+            WithdrawCRUD = new WithdrawRep(_session);
+            personCRUD = new PersonRep(_session);
         }
 
         public async Task<ActionResult> MandarContaDeposito()

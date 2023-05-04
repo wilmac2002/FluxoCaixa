@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace DesafioFluxoCaixa.CRUD
 {
-    public class PersonCRUD
+    public class PersonRep
     {
         private ISession _session;
-        public PersonCRUD(ISession session) => _session = session;
+        public PersonRep(ISession session) => _session = session;
         public async Task Add(Person item)
         {
             ITransaction transaction = null;

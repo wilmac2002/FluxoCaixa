@@ -1,4 +1,4 @@
-﻿using DesafioFluxoCaixa.Models.Transacoes;
+﻿using DesafioFluxoCaixa.Models.Contas;
 using NHibernate;
 using System;
 using System.Collections.Generic;
@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace DesafioFluxoCaixa.CRUD
 {
-    public class DepositCRUD
+    public class AccountRep
     {
         private ISession _session;
-        public DepositCRUD(ISession session) => _session = session;
-        public async Task Add(Deposit item)
+        public AccountRep(ISession session) => _session = session;
+        public async Task Add(Account item)
         {
             ITransaction transaction = null;
             try
@@ -31,40 +31,14 @@ namespace DesafioFluxoCaixa.CRUD
             }
         }
 
-        public IEnumerable<Deposit> FindAll() =>
-                        _session.Query<Deposit>().ToArray();
+        public IList<Account> FindAll() =>
+                        _session.Query<Account>().ToList();
 
-        public IEnumerable<Deposit> FindAllByDates(FiltroPesquisaTransacoes datas)
-        {
-            return _session.Query<Deposit>().Where(x => (x.Date.Date >= datas.DataInicial && x.Date.Date <= datas.DataFinal) && x.Conta.Id == datas.UserId);
-        }
+        public async Task<Account> FindByID(int id) =>
+                await _session.GetAsync<Account>(id);
 
-        public IEnumerable<Deposit> FindAllLast7Days(int id)
-        {
-            IEnumerable<Deposit> deposits = _session.Query<Deposit>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-7) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
-
-            return deposits;
-        }
-
-        public IEnumerable<Deposit> FindAllLast15Days(int id)
-        {
-            IEnumerable<Deposit> deposits = _session.Query<Deposit>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-15) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
-
-            return deposits;
-        }
-
-        public IEnumerable<Deposit> FindAllLast30Days(int id)
-        {
-            IEnumerable<Deposit> deposits = _session.Query<Deposit>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-30) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
-
-            return deposits;
-        }
-
-        public IEnumerable<Deposit> FindAllByAccount(int id) =>
-                _session.Query<Deposit>().Where(x => x.Conta.Id == id);
-
-        public async Task<Deposit> FindByID(int id) =>
-                        await _session.GetAsync<Deposit>(id);
+        public Account FindByForeignId(int id) =>
+                        _session.Query<Account>().Where(x => x.Person.Id == id).FirstOrDefault();
 
         public async Task Remove(int id)
         {
@@ -72,7 +46,7 @@ namespace DesafioFluxoCaixa.CRUD
             try
             {
                 transaction = _session.BeginTransaction();
-                var item = await _session.GetAsync<Deposit>(id);
+                var item = await _session.GetAsync<Account>(id);
                 await _session.DeleteAsync(item);
                 await transaction.CommitAsync();
             }
@@ -93,13 +67,8 @@ namespace DesafioFluxoCaixa.CRUD
             try
             {
                 transaction = _session.BeginTransaction();
-                var item = this.FindAllByAccount(id).ToList();
-
-                foreach(var deposit in item)
-                {
-                    await _session.DeleteAsync(deposit);
-                }
-
+                var item = this.FindByForeignId(id);
+                await _session.DeleteAsync(item);
                 await transaction.CommitAsync();
             }
             catch (Exception ex)
@@ -113,7 +82,7 @@ namespace DesafioFluxoCaixa.CRUD
             }
         }
 
-        public async Task Update(Deposit item)
+        public async Task Update(Account item)
         {
             ITransaction transaction = null;
             try

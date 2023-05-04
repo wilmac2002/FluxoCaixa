@@ -7,12 +7,11 @@ using System.Threading.Tasks;
 
 namespace DesafioFluxoCaixa.CRUD
 {
-    public class WithdrawCRUD
+    public class DepositRep
     {
         private ISession _session;
-        public WithdrawCRUD(ISession session) => _session = session;
-
-        public async Task Add(Withdraw item)
+        public DepositRep(ISession session) => _session = session;
+        public async Task Add(Deposit item)
         {
             ITransaction transaction = null;
             try
@@ -32,37 +31,34 @@ namespace DesafioFluxoCaixa.CRUD
             }
         }
 
-        public IEnumerable<Withdraw> FindAllByAccount(int id) =>
-                _session.Query<Withdraw>().Where(x => x.Conta.Id == id);
+        public IEnumerable<Deposit> FindAll() =>
+                        _session.Query<Deposit>().ToArray();
 
-        public IEnumerable<Withdraw> FindAllByDates(FiltroPesquisaTransacoes datas)
+        public IEnumerable<Deposit> FindAllByDates(FiltroPesquisaTransacoes datas)
         {
-            return _session.Query<Withdraw>().Where(x => (x.Date.Date >= datas.DataInicial && x.Date.Date <= datas.DataFinal) && x.Conta.Id == datas.UserId);
+            return _session.Query<Deposit>().Where(x => (x.Date.Date >= datas.DataInicial && x.Date.Date <= datas.DataFinal) && x.Conta.Id == datas.UserId);
         }
 
-        public IEnumerable<Withdraw> FindAllLast7Days(int id)
+        public IEnumerable<Deposit> FindAllLast7Days(int id)
         {
-            IEnumerable<Withdraw> saques = _session.Query<Withdraw>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-7) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
-
-            return saques;
+            return _session.Query<Deposit>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-7) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
         }
 
-        public IEnumerable<Withdraw> FindAllLast15Days(int id)
+        public IEnumerable<Deposit> FindAllLast15Days(int id)
         {
-            IEnumerable<Withdraw> saques = _session.Query<Withdraw>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-15) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
-
-            return saques;
+            return _session.Query<Deposit>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-15) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
         }
 
-        public IEnumerable<Withdraw> FindAllLast30Days(int id)
+        public IEnumerable<Deposit> FindAllLast30Days(int id)
         {
-            IEnumerable<Withdraw> saques = _session.Query<Withdraw>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-30) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
-
-            return saques;
+            return _session.Query<Deposit>().Where(x => (x.Date >= DateTime.Now.Date.AddDays(-30) && x.Date <= DateTime.Now) && (x.Conta.Id == id)).ToArray();
         }
 
-        public async Task<Withdraw> FindByID(int id) =>
-                        await _session.GetAsync<Withdraw>(id);
+        public IEnumerable<Deposit> FindAllByAccount(int id) =>
+                _session.Query<Deposit>().Where(x => x.Conta.Id == id);
+
+        public async Task<Deposit> FindByID(int id) =>
+                        await _session.GetAsync<Deposit>(id);
 
         public async Task Remove(int id)
         {
@@ -70,7 +66,7 @@ namespace DesafioFluxoCaixa.CRUD
             try
             {
                 transaction = _session.BeginTransaction();
-                var item = await _session.GetAsync<Withdraw>(id);
+                var item = await _session.GetAsync<Deposit>(id);
                 await _session.DeleteAsync(item);
                 await transaction.CommitAsync();
             }
@@ -93,9 +89,9 @@ namespace DesafioFluxoCaixa.CRUD
                 transaction = _session.BeginTransaction();
                 var item = this.FindAllByAccount(id).ToList();
 
-                foreach (var saque in item)
+                foreach(var deposit in item)
                 {
-                    await _session.DeleteAsync(saque);
+                    await _session.DeleteAsync(deposit);
                 }
 
                 await transaction.CommitAsync();
@@ -111,7 +107,7 @@ namespace DesafioFluxoCaixa.CRUD
             }
         }
 
-        public async Task Update(Withdraw item)
+        public async Task Update(Deposit item)
         {
             ITransaction transaction = null;
             try

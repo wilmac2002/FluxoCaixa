@@ -18,20 +18,20 @@ namespace DesafioFluxoCaixa.Controllers
     {
         private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _contxt;
         private readonly ISession _session;
-        private readonly PersonCRUD PersonCRUD;
-        private readonly WithdrawCRUD WithdrawCRUD;
-        private readonly DepositCRUD DepositCRUD;
-        private readonly AccountCRUD AccountCRUD;
+        private readonly PersonRep PersonCRUD;
+        private readonly WithdrawRep WithdrawCRUD;
+        private readonly DepositRep DepositCRUD;
+        private readonly AccountRep AccountCRUD;
         private ServicoEmail servicoEmail;
 
         public CRUDController(ISession session, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, ServicoEmail _servicoEmail)
         {
             _session = session;
             _contxt = httpContextAccessor;
-            PersonCRUD = new PersonCRUD(_session);
-            AccountCRUD = new AccountCRUD(_session);
-            DepositCRUD = new DepositCRUD(_session);
-            WithdrawCRUD = new WithdrawCRUD(_session);
+            PersonCRUD = new PersonRep(_session);
+            AccountCRUD = new AccountRep(_session);
+            DepositCRUD = new DepositRep(_session);
+            WithdrawCRUD = new WithdrawRep(_session);
             servicoEmail = _servicoEmail;
         }
 
@@ -71,66 +71,42 @@ namespace DesafioFluxoCaixa.Controllers
         [HttpPost]
         public async Task<JsonResult> AtualizarConta(Account conta)
         {
-            try
-            {
-                Account Conta = new(conta.MinimalBalance, conta.Limit);
+            Account Conta = new(conta.MinimalBalance, conta.Limit);
 
-                var account = await AccountCRUD.FindByID(conta.Id);
+            var account = await AccountCRUD.FindByID(conta.Id);
 
-                account.Limit = Conta.Limit;
-                account.MinimalBalance = Conta.MinimalBalance;
+            account.Limit = Conta.Limit;
+            account.MinimalBalance = Conta.MinimalBalance;
 
-                await AccountCRUD.Update(account);
+            await AccountCRUD.Update(account);
 
-                return Json(account);
-            }
-
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-
-                return Json(false);
-            }
+            return Json(account);
         }
 
         [HttpPost]
         public async Task<JsonResult> Sacar(DadosTransacao DadosSaque)
         {
             Person person = JsonSerializer.Deserialize<Person>(HttpContext.Session.GetString("User"));
-            Account
-                conta = null;
+            var conta = await AccountCRUD.FindByID(Convert.ToInt32(DadosSaque.ContaId));
+            person.Conta = conta;
 
-            try
+            Withdraw saque = new(conta, Convert.ToDouble(DadosSaque.Valor.Replace('.',',')), DadosSaque.Descricao, DateTime.Now);
+
+            await WithdrawCRUD.Add(saque);
+            await AccountCRUD.Update(conta);
+
+            string msg = null;
+            if (conta.IsUnderMinimal())
             {
-                conta = await AccountCRUD.FindByID(Convert.ToInt32(DadosSaque.ContaId));
-                person.Conta = conta;
-
-                Withdraw saque = new(conta, Convert.ToDouble(DadosSaque.Valor.Replace('.', ',')), DadosSaque.Descricao, DateTime.Now);
-
-                await WithdrawCRUD.Add(saque);
-                await AccountCRUD.Update(conta);
-
-                string msg = null;
-                if (conta.IsUnderMinimal())
-                {
-                    msg = "Cuidado! Sua conta está abaixo do mínimo cadastrado.";
-                    servicoEmail.EnviarEmail(new[] { person.Email },
-                        "Saldo abaixo do mínimo!",
-                         person.Name,
-                        $"Cuidado. Sua conta em Desafio Fluxo de Caixa está com o saldo em R${conta.MinimalBalance - conta.Balance} abaixo do mínimo cadastrado.");
-                }
-
-                JsonpResult Retorno = new(person, msg);
-                return Json(Retorno);
+                msg = "Cuidado! Sua conta está abaixo do mínimo cadastrado.";
+                servicoEmail.EnviarEmail(new[] { person.Email },
+                    "Saldo abaixo do mínimo!",
+                     person.Name,
+                    $"Cuidado. Sua conta em Desafio Fluxo de Caixa está com o saldo em R${conta.MinimalBalance - conta.Balance} abaixo do mínimo cadastrado.");
             }
 
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-
-                JsonpResult Retorno = new(person, ex.Message);
-                return Json(Retorno);
-            }
+            JsonpResult Retorno = new(person, msg);
+            return Json(Retorno);
         }
 
         [HttpPost]
@@ -138,18 +114,10 @@ namespace DesafioFluxoCaixa.Controllers
         {
             Person person = JsonSerializer.Deserialize<Person>(HttpContext.Session.GetString("User"));
 
-            try
-            {
-                var conta = await AccountCRUD.FindByID(Convert.ToInt32(deposit.ContaId));
-                Deposit deposit_atualizado = new(conta, Convert.ToDouble(deposit.Valor.Replace('.', ',')), deposit.Descricao, DateTime.Now);
-                await DepositCRUD.Add(deposit_atualizado);
-                await AccountCRUD.Update(conta);
-            }
-
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            var conta = await AccountCRUD.FindByID(Convert.ToInt32(deposit.ContaId));
+            Deposit deposit_atualizado = new(conta, Convert.ToDouble(deposit.Valor.Replace('.',',')), deposit.Descricao, DateTime.Now);
+            await DepositCRUD.Add(deposit_atualizado);
+            await AccountCRUD.Update(conta);
 
             return Json(person);
         }
@@ -166,19 +134,10 @@ namespace DesafioFluxoCaixa.Controllers
         [HttpPost]
         public async Task<JsonResult> AtualizarPessoa(Person person)
         {
-            try
-            {
-                Person pessoa = new(person.Id, person.Name, person.Email, person.Password, person.Salario);
-                await PersonCRUD.Update(pessoa);
+            Person pessoa = new(person.Id, person.Name, person.Email, person.Password, person.Salario);
+            await PersonCRUD.Update(pessoa);
 
-                return Json(person);
-            }
-
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return Json(false);
-            }
+            return Json(person);
         }
 
         public IActionResult SelecionarPessoa()
@@ -190,31 +149,22 @@ namespace DesafioFluxoCaixa.Controllers
         [HttpPost]
         public async Task<JsonResult> SendCadastro(Cadastro data)
         {
-            try
-            {
-                Person person = new Person
-                    (
-                        data.Nome, data.Email,
-                        data.Senha, Convert.ToDouble(data.Salario),
-                        new Account(Convert.ToDouble(data.SaldoMinimo))
-                    );
+            Person person = new Person
+                (
+                    data.Nome, data.Email,
+                    data.Senha, Convert.ToDouble(data.Salario),
+                    new Account(Convert.ToDouble(data.SaldoMinimo))
+                );
 
-                person.Conta.Person = person;
-                await PersonCRUD.Add(person);
-                await AccountCRUD.Add(person.Conta);
+            person.Conta.Person = person;
+            await PersonCRUD.Add(person);
+            await AccountCRUD.Add(person.Conta);
 
-                person.Conta = null;
-                string jsonString = JsonSerializer.Serialize(person);
-                _contxt.HttpContext.Session.SetString("User", jsonString);
+            person.Conta = null;
+            string jsonString = JsonSerializer.Serialize(person);
+            _contxt.HttpContext.Session.SetString("User", jsonString);
 
-                return Json(1);
-            }
-
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return Json(1);
-            }
+            return Json(1);
         }
     }
 }

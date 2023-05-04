@@ -1,20 +1,11 @@
 ﻿@model DesafioFluxoCaixa.Models.Transacoes.Withdraw
-@using System.Text.Json
-@using Microsoft.AspNetCore.Http
-@using DesafioFluxoCaixa.Models.Pessoas
-@inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    var User = JsonSerializer.Deserialize<Person>(HttpContextAccessor.HttpContext.Session.GetString("User"));
-
-    if (User.Name != "Admin")
-        Layout = "~/Views/Shared/_LayoutUser.cshtml";
-}
-@{
+    Layout = "~/Views/Shared/_LayoutUser.cshtml";
     ViewData["Title"] = "Saque";
 }
 
-<h1>Sacar da conta de @Model.Conta.Person.Name</h1>
+<h1>Sacar</h1>
 
 <h3 id="Saldo">Saldo: R$@Model.Conta.Balance</h3>
 
@@ -22,16 +13,14 @@
 <div class="row">
     <div class="col-md-4">
         <form data-bind="submit: ValidarDados">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="Value" class="control-label">Valor *</label>
-                <input type="number" step=".01" id="Valor" data-bind="value: Valor, css: { 'is-invalid': Valor.error() && Valor.isModified() }" asp-for="Value" placeholder="R$" class="form-control text-center">
-                <span asp-validation-for="Value" class="text-danger"></span>
+                <label class="control-label">Valor *</label>
+                <input type="number" step=".01" id="Valor" data-bind="value: Valor, css: { 'is-invalid': Valor.error() && Valor.isModified() }" placeholder="R$" class="form-control text-center">
             </div>
             <div class="form-group">
-                <label asp-for="Description" class="control-label">Descrição</label>
-                <input data-bind="value: Descricao" asp-for="Description" type="text" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
+                <label class="control-label">Descrição</label>
+                <input data-bind="value: Descricao" type="text" class="form-control" />
             </div>
             <div class="form-group text-center mt-3">
                 <input type="submit" value="Sacar" class="btn btn-success" />
@@ -39,28 +28,6 @@
         </form>
     </div>
 </div>
-
-<!-- Modal User -->
-<!--<div class="modal fade" id="ModalDepositSuccessUser" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Saque efetuado com sucesso</h5>
-            </div>
-            <div id="ModalBody" class="modal-body">
-                <p id="Msg-Alerta" class="text-danger">
-
-                </p>
-
-                Deseja sacar novamente?
-            </div>
-            <div class="modal-footer">
-                <button onclick="SacarNovamente()" type="button" class="btn btn-success" data-bs-dismiss="modal">Depositar novamente</button>
-                <button onclick="RetornarPaginaInicial()" type="button" class="btn btn-danger">Retornar à pagina inicial</button>
-            </div>
-        </div>
-    </div>
-</div>-->
 
 <script type="text/javascript">
 
@@ -80,7 +47,9 @@
         ko.validation.rules["saldo"] = {
 
             validator: function (value) {
-                var saldo = @Model.Conta.Balance;
+                var saldo = @Convert.ToDouble(Model.Conta.Balance.ToString().Replace(",", ""));
+                console.log(saldo);
+                console.log(value);
                 return value <= saldo;
             },
 
@@ -164,13 +133,5 @@
         vm = new viewModel();
         ko.applyBindings(vm);
     });
-
-    @*function SacarNovamente() {
-        window.location.href = '/CRUD/MandarContaSaque/' + @Model.Conta.Id;
-    }
-
-    function RetornarPaginaInicial() {
-        window.location.href = '/Home/Index';
-    }*@
 </script>
 
